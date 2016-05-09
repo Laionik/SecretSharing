@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SecretSharing
 {
-    class Program
+    class SecretSharing
     {
         static void Main(string[] args)
         {
