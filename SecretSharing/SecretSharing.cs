@@ -8,27 +8,8 @@ namespace SecretSharing
 {
     class SecretSharing
     {
-        /// <summary>
-        /// Generate start values
-        /// </summary>
-        /// <param name="secret">Secret</param>
-        /// <param name="partsNumber">Number of parts</param>
-        /// <param name="p">Value of modulo</param>
-        /// <param name="t">Parts required to recover a secret</param>
-        /// <param name="aTab">Table of random values</param>
-        private static void GenerateBasic(int secret, out int partsNumber, out int p, out int t, out int[] aTab)
-        {
-            Random rnd = new Random();
-            partsNumber = rnd.Next(10, 20);
-            p = rnd.Next(secret > partsNumber ? secret : partsNumber, secret > partsNumber ? secret * 10 : partsNumber * 10);
-            t = rnd.Next(5, partsNumber);
-            aTab = new int[t - 1];
-            for (int i = 0; i < t - 1; i++)
-            {
-                aTab[i] = rnd.Next(100);
-            }
-        }
-
+        private static Random rnd;
+        #region test
         /// <summary>
         /// Generate test start values
         /// </summary>
@@ -39,11 +20,40 @@ namespace SecretSharing
         /// <param name="aTab">Table of random values</param>
         private static void GenerateBasicTest(int secret, out int partsNumber, out int p, out int t, out int[] aTab)
         {
-            Random rnd = new Random();
             partsNumber = 4;
             p = 1523;
             t = 3;
             aTab = new int[2] { 352, 62 };
+        }
+        #endregion
+
+        #region parting
+
+        private static int GetPrimeNumber(int maxValue)
+        {
+            int[] primeNumbers = new int[16] { 379, 1697, 2711, 3769, 5881, 6421, 7757, 8563, 9601, 10151, 12107, 14173, 15233, 18233, 19991, 28837 };
+            List<int> primeNumbersGT = primeNumbers.Where(x => x > maxValue).ToList();
+            return primeNumbersGT[rnd.Next(primeNumbersGT.Count)];
+        }
+
+        /// <summary>
+        /// Generate start values
+        /// </summary>
+        /// <param name="secret">Secret</param>
+        /// <param name="partsNumber">Number of parts</param>
+        /// <param name="p">Value of modulo</param>
+        /// <param name="t">Parts required to recover a secret</param>
+        /// <param name="aTab">Table of random values</param>
+        private static void GenerateBasic(int secret, out int partsNumber, out int p, out int t, out int[] aTab)
+        {
+            partsNumber = rnd.Next(10, 20);
+            p = GetPrimeNumber(Math.Max(secret, partsNumber));
+            t = rnd.Next(5, partsNumber);
+            aTab = new int[t - 1];
+            for (int i = 0; i < t - 1; i++)
+            {
+                aTab[i] = rnd.Next(1000);
+            }
         }
 
         /// <summary>
@@ -55,7 +65,7 @@ namespace SecretSharing
         public static double Sum(int[] aTab, int x)
         {
             double sum = 0;
-            for(int i = 1; i <= aTab.Length; i ++)
+            for (int i = 1; i <= aTab.Length; i++)
                 sum += aTab[i - 1] * Math.Pow(x, i);
             return sum;
         }
@@ -95,39 +105,67 @@ namespace SecretSharing
         /// Parting alghoritm
         /// </summary>
         /// <returns>Table of secret parts</returns>
-        public static double[] SecretParting(out int t, out int p)
+        public static double[] SecretParting(out int t, out int p, out int partsNumber)
         {
             // Parting
-            //Console.WriteLine("What's your secret number?");
-            //int secret = int.Parse(Console.ReadLine());
-            int secret = 954;
-            int partsNumber;
+            Console.WriteLine("What's your secret number?");
+            int secret = int.Parse(Console.ReadLine());
             int[] aTab;
-            //GenerateBasic(secret, out partsNumber, out p, out t, out aTab);
-            GenerateBasicTest(secret, out partsNumber, out p, out t, out aTab);
+            GenerateBasic(secret, out partsNumber, out p, out t, out aTab);
+            // GenerateBasicTest(secret, out partsNumber, out p, out t, out aTab); //Test value
             double[] secretTab = SecretPartsCalculate(secret, partsNumber, p, t, aTab);
             DisplayParts(secretTab);
             return secretTab;
         }
+        #endregion
+
+        #region combaining
         /// <summary>
         /// Factor calculating
         /// </summary>
         /// <returns>Free word of factor</returns>
-        public static double FactorCalculating(int index, double[] partsTab)
+        public static double FactorCalculating(int index, List<int> indexTab)
         {
-            //tu ma być X nie Y
-            double denominator = index == 0 ? partsTab[1] : partsTab[0];
-            double counter = index == 0 ? partsTab[0] - partsTab[1] : partsTab[index] - partsTab[0];
-            for (int i = index == 0 ? 1 : 0; i < partsTab.Length; i++)
+            double denominator = 1;
+            double counter = 1;
+            int i = 0;
+            foreach (int indexValue in indexTab)
             {
                 if (i != index)
                 {
-                    denominator *= partsTab[i];
-                    counter *= partsTab[index] - partsTab[i];
+                    denominator *= (-1) * indexValue;
+                    counter *= indexTab[index] - indexValue;
                 }
+                i++;
             }
-            double test = denominator / counter;
             return denominator / counter;
+        }
+
+        /// <summary>
+        /// Generate list of random indexes without duplicates
+        /// </summary>
+        /// <param name="t">Number of required parts</param>
+        /// <param name="partsNumber">Number of parts</param>
+        /// <returns>List of random indexes without duplicates</returns>
+        public static List<int> GenerateRandomIndexList(int t, int partsNumber)
+        {
+            List<int> allNumbers = new List<int>();
+            List<int> partsIndex = new List<int>();
+            int maxNumber = partsNumber;
+
+            for (int i = 1; i <= partsNumber; i++)
+            {
+                allNumbers.Add(i);
+            }
+
+            for (int i = 0; i < t; i++)
+            {
+                int rndNumber = rnd.Next(maxNumber);
+                partsIndex.Add(allNumbers[rndNumber]);
+                allNumbers.RemoveAt(rndNumber);
+                maxNumber--;
+            }
+            return partsIndex;
         }
 
         /// <summary>
@@ -136,30 +174,35 @@ namespace SecretSharing
         /// <param name="secretTab">Table of secret parts</param>
         /// <param name="t">Number of required parts</param>
         /// <returns>Secret</returns>
-        public static double SecretCombaining(double[] secretTab, int t, int p)
+        public static double SecretCombaining(double[] secretTab, int t, int p, int partsNumber)
         {
             double secret = 0;
-            double[] partsTab = secretTab.Take(t).ToArray();
-            for(int i = 0; i < t; i++)
+            List<int> partsIndex = GenerateRandomIndexList(t, partsNumber);
+            List<double> partsTab = new List<double>();
+            foreach (int number in partsIndex)
+                partsTab.Add(secretTab[number - 1]);
+
+            for (int i = 0; i < t; i++)
             {
-                secret += FactorCalculating(i, partsTab) % p;
+                secret += partsTab[i] * FactorCalculating(i, partsIndex) % p;
             }
 
             Console.WriteLine("Secret: {0}", secret);
             return secret;
         }
-
+        #endregion
 
         static void Main(string[] args)
         {
             try
             {
+                rnd = new Random();
                 // Parting
-                int t, p;
-                double[] secretTab = SecretParting(out t, out p);
+                int t, p, partsNumber;
+                double[] secretTab = SecretParting(out t, out p, out partsNumber);
 
                 // Combaining
-                double secret = SecretCombaining(secretTab, t, p);
+                double secret = SecretCombaining(secretTab, t, p, partsNumber);
             }
             catch (Exception x)
             {
