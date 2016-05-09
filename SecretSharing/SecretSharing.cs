@@ -91,21 +91,75 @@ namespace SecretSharing
             }
         }
 
+        /// <summary>
+        /// Parting alghoritm
+        /// </summary>
+        /// <returns>Table of secret parts</returns>
+        public static double[] SecretParting(out int t, out int p)
+        {
+            // Parting
+            //Console.WriteLine("What's your secret number?");
+            //int secret = int.Parse(Console.ReadLine());
+            int secret = 954;
+            int partsNumber;
+            int[] aTab;
+            //GenerateBasic(secret, out partsNumber, out p, out t, out aTab);
+            GenerateBasicTest(secret, out partsNumber, out p, out t, out aTab);
+            double[] secretTab = SecretPartsCalculate(secret, partsNumber, p, t, aTab);
+            DisplayParts(secretTab);
+            return secretTab;
+        }
+        /// <summary>
+        /// Factor calculating
+        /// </summary>
+        /// <returns>Free word of factor</returns>
+        public static double FactorCalculating(int index, double[] partsTab)
+        {
+            //tu ma być X nie Y
+            double denominator = index == 0 ? partsTab[1] : partsTab[0];
+            double counter = index == 0 ? partsTab[0] - partsTab[1] : partsTab[index] - partsTab[0];
+            for (int i = index == 0 ? 1 : 0; i < partsTab.Length; i++)
+            {
+                if (i != index)
+                {
+                    denominator *= partsTab[i];
+                    counter *= partsTab[index] - partsTab[i];
+                }
+            }
+            double test = denominator / counter;
+            return denominator / counter;
+        }
+
+        /// <summary>
+        /// Combaining alghoritm
+        /// </summary>
+        /// <param name="secretTab">Table of secret parts</param>
+        /// <param name="t">Number of required parts</param>
+        /// <returns>Secret</returns>
+        public static double SecretCombaining(double[] secretTab, int t, int p)
+        {
+            double secret = 0;
+            double[] partsTab = secretTab.Take(t).ToArray();
+            for(int i = 0; i < t; i++)
+            {
+                secret += FactorCalculating(i, partsTab) % p;
+            }
+
+            Console.WriteLine("Secret: {0}", secret);
+            return secret;
+        }
+
 
         static void Main(string[] args)
         {
             try
             {
-                //Console.WriteLine("What's your secret number?");
-                //int secret = int.Parse(Console.ReadLine());
-                int secret = 954;// int.Parse(Console.ReadLine());
-                int partsNumber, p, t;
-                int[] aTab;
-                //GenerateBasic(secret, out partsNumber, out p, out t, out aTab);
-                GenerateBasicTest(secret, out partsNumber, out p, out t, out aTab);
-                double[] secretTab = SecretPartsCalculate(secret, partsNumber, p, t, aTab);
-                DisplayParts(secretTab);
+                // Parting
+                int t, p;
+                double[] secretTab = SecretParting(out t, out p);
 
+                // Combaining
+                double secret = SecretCombaining(secretTab, t, p);
             }
             catch (Exception x)
             {
